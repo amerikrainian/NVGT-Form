@@ -1,0 +1,171 @@
+#include "form/core/window_interface.nvgt"
+#include "form/core/form.nvgt"
+#include "form/core/accessibility_manager.nvgt"
+#include "form/events/event.nvgt"
+
+class WindowRootForm : Form {
+    private Window@ owner_window;
+    
+    WindowRootForm(Window@ owner, const string& in name) {
+        super(name);
+        @owner_window = owner;
+    }
+    
+    bool handle_event(Event@ event) override {
+        // Focus events need special handling at window level
+        if (event.type == EventType::FocusGained || event.type == EventType::FocusLost) {
+            owner_window.handle_focus_event(event);
+        }
+        // Let other events propagate normally
+        return Form::handle_event(event);
+    }
+}
+
+class Window : IWindow
+{
+    private WindowRootForm@ root_form;
+    private AccessibilityManager@ accessibility_manager;
+    private IControl@ focused_control;
+    private string title;
+    private bool running = false;
+    
+    Window(const string& in title = "Window") {
+        this.title = title;
+        @root_form = WindowRootForm(this, title);
+        @accessibility_manager = AccessibilityManager();
+        @focused_control = null;
+    }
+    
+    // --- IWindow Implementation ---
+    void show() {
+        running = true;
+        show_window(title);
+        
+        speak(title + " window", true);
+        
+        set_focus_to_first();
+        if (@focused_control is null) {
+            speak("No focusable controls", true);
+        }
+    }
+    
+    void close() {
+        running = false;
+    }
+    
+    void run() {
+        show();
+        
+        while (running) {
+            wait(5);
+            handle_input();
+        }
+    }
+    
+    bool is_running() { return running; }
+    
+    string get_title() { return title; }
+    
+    void set_title(const string& in t) { 
+        title = t;
+        root_form.set_name(t);
+    }
+    
+    void add_control(IControl@ control) {
+        root_form.add_child(control);
+    }
+    
+    void remove_control(IControl@ control) {
+        root_form.remove_child(control);
+        if (@focused_control is @control) {
+            @focused_control = null;
+        }
+    }
+    
+    private void handle_input() {
+        if (key_pressed(KEY_TAB)) {
+            bool backward = key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT);
+            bool handled = false;
+            
+            if (@focused_control !is null) {
+                IControl@ current = focused_control;
+                while (@current !is null && !handled) {
+                    handled = backward ? current.focus_previous_child() : current.focus_next_child();
+                    @current = current.get_parent();
+                }
+            }
+            
+            if (!handled) {
+                // No control handled it, wrap around at window level
+                if (backward) {
+                    set_focus_to_last();
+                } else {
+                    set_focus_to_first();
+                }
+            }
+        }
+        
+        if (key_pressed(KEY_ESCAPE)) {
+            close();
+        }
+        
+        if (key_pressed(KEY_F1)) {
+            if (@focused_control !is null) {
+                accessibility_manager.announce_help(focused_control);
+            }
+        }
+        
+        if (key_pressed(KEY_RETURN) || key_pressed(KEY_SPACE)) {
+            if (@focused_control !is null) {
+                KeyEvent@ e = KeyEvent(focused_control, EventType::KeyPressed, 
+                                     key_pressed(KEY_RETURN) ? KEY_RETURN : KEY_SPACE,
+                                     key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT),
+                                     key_down(KEY_LCTRL) || key_down(KEY_RCTRL),
+                                     key_down(KEY_LALT) || key_down(KEY_RALT));
+                focused_control.handle_event(e);
+            }
+        }
+        
+        if (@focused_control !is null) {
+            for (int key = 0; key < 255; key++) {
+                if (key_pressed(key) && key != KEY_TAB && key != KEY_ESCAPE && 
+                    key != KEY_F1 && key != KEY_RETURN && key != KEY_SPACE) {
+                    KeyEvent@ e = KeyEvent(focused_control, EventType::KeyPressed, key, 
+                                         key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT),
+                                         key_down(KEY_LCTRL) || key_down(KEY_RCTRL),
+                                         key_down(KEY_LALT) || key_down(KEY_RALT));
+                    focused_control.handle_event(e);
+                }
+            }
+        }
+    }
+    
+    
+    private void set_focus_to_first() {
+        for (uint i = 0; i < root_form.get_child_count(); i++) {
+            if (root_form.set_focus_to_first_in(root_form.get_child_at(i))) {
+                return;
+            }
+        }
+    }
+    
+    private void set_focus_to_last() {
+        for (int i = root_form.get_child_count() - 1; i >= 0; i--) {
+            if (root_form.set_focus_to_last_in(root_form.get_child_at(i))) {
+                return;
+            }
+        }
+    }
+    
+    void handle_focus_event(Event@ event) {
+        if (event.type == EventType::FocusGained) {
+            @focused_control = event.source;
+            accessibility_manager.handle_event(event);
+        } else if (event.type == EventType::FocusLost) {
+            if (@focused_control is @event.source) {
+                @focused_control = null;
+            }
+            accessibility_manager.handle_event(event);
+        }
+    }
+}

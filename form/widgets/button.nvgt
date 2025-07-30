@@ -1,0 +1,34 @@
+#include "form/core/base_control.nvgt"
+#include "form/core/event_dispatcher.nvgt"
+
+class Button : BaseControl
+{
+    private string text;
+    EventDispatcher on_click;
+
+    Button(const string& in text)
+    {
+        this.text = text;
+        this.focusable = true;
+    }
+    
+    string get_text() { return text; }
+    void set_text(const string& in t) { text = t; }
+    
+    string get_accessible_name() override { return text; }
+    string get_accessible_role() override { return "button"; }
+
+    bool handle_event(Event@ event) override {
+        if (event.type == EventType::KeyPressed) {
+            KeyEvent@ key_event = cast<KeyEvent@>(event);
+            if (key_event !is null && (key_event.keycode == KEY_RETURN || key_event.keycode == KEY_SPACE)) {
+                Event@ activate_event = Event(this, EventType::Activated);
+                on_click.fire(activate_event);
+                
+                bubble_event(activate_event);
+                return true;
+            }
+        }
+        return BaseControl::handle_event(event);
+    }
+}

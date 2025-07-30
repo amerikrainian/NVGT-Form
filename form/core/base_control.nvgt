@@ -1,0 +1,157 @@
+#include "form/core/control.nvgt"
+
+class BaseControl : IControl
+{
+    protected IControl@ parent;
+    protected bool focusable = true;
+    protected bool focused = false;
+    protected bool visible = true;
+    protected bool enabled = true;
+    protected array<IControl@> children;
+
+    IControl@ get_parent() { return parent; }
+    void set_parent(IControl@ p) { @parent = p; }
+    bool is_focusable() { return focusable && visible && enabled; }
+    bool has_focus() { return focused; }
+    void set_focus(bool f) { 
+        if (f != focused) {
+            if (f) {
+                ensure_single_focus();
+            }
+            
+            focused = f;
+            Event@ e = Event(this, f ? EventType::FocusGained : EventType::FocusLost);
+            bubble_event(e);
+        }
+    }
+    
+    private void ensure_single_focus() {
+        // Are we overcomplicating this?
+        IControl@ root = this;
+        while (root.get_parent() !is null) {
+            @root = root.get_parent();
+        }
+        
+        // Clear focus from all other controls
+        clear_focus_except(root, this);
+    }
+    
+    private void clear_focus_except(IControl@ control, IControl@ except) {
+        if (@control is null || @control is @except) return;
+        
+        if (control.has_focus()) {
+            control.set_focus(false);
+        }
+        
+        for (uint i = 0; i < control.get_child_count(); i++) {
+            clear_focus_except(control.get_child_at(i), except);
+        }
+    }
+    
+    protected void bubble_event(Event@ event) {
+        bool ignore_handled = (event.type == EventType::FocusGained || 
+                              event.type == EventType::FocusLost);
+        
+        IControl@ current = this;
+        while (@current !is null) {
+            if (current.handle_event(event)) {
+                // If handled and not a notification event, stop bubbling
+                if (!ignore_handled) {
+                    event.stop_propagation();
+                    break;
+                }
+            }
+            @current = current.get_parent();
+        }
+    }
+
+    bool is_enabled() { return enabled; }
+
+    void set_enabled(bool e) { enabled = e; }
+
+    void add_child(IControl@ child) {
+        if (@child !is null) {
+            children.insert_last(child);
+            child.set_parent(this);
+        }
+    }
+    
+    void remove_child(IControl@ child) {
+        int index = children.find_by_ref(child);
+        if (index != -1) {
+            children.remove_at(index);
+            child.set_parent(null);
+        }
+    }
+    
+    IControl@ get_child_at(uint index) { 
+        if (index < children.length()) return children[index];
+        return null;
+    }
+    
+    uint get_child_count() { return children.length(); }
+
+    // Base controls do nothing by default.
+    bool handle_event(Event@ event) { return false; }
+    
+    bool focus_next_child() {
+        // Leaf controls can't handle navigation - let parent handle it
+        return false;
+    }
+    
+    bool focus_previous_child() {
+        // Leaf controls can't handle navigation - let parent handle it
+        return false;
+    }
+    
+    string get_accessible_name() { return ""; }
+    string get_accessible_role() { return "control"; }
+    
+    bool contains_focused_descendant(IControl@ control) {
+        if (@control is null) return false;
+        if (control.has_focus()) return true;
+        
+        for (uint i = 0; i < control.get_child_count(); i++) {
+            if (contains_focused_descendant(control.get_child_at(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    bool set_focus_to_first_in(IControl@ control) {
+        if (@control is null) return false;
+        
+        if (control.is_focusable()) {
+            control.set_focus(true);
+            return true;
+        }
+        
+        // Try children
+        for (uint i = 0; i < control.get_child_count(); i++) {
+            if (set_focus_to_first_in(control.get_child_at(i))) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    bool set_focus_to_last_in(IControl@ control) {
+        if (@control is null) return false;
+        
+        // Try children first (reverse order)
+        for (int i = control.get_child_count() - 1; i >= 0; i--) {
+            if (set_focus_to_last_in(control.get_child_at(i))) {
+                return true;
+            }
+        }
+        
+        if (control.is_focusable()) {
+            control.set_focus(true);
+            return true;
+        }
+        
+        return false;
+    }
+}

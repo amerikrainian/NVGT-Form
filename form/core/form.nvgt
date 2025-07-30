@@ -1,0 +1,69 @@
+#include "form/core/base_control.nvgt"
+
+class Form : BaseControl
+{
+    private string name;
+    
+    Form(const string& in name = "Form") {
+        this.name = name;
+        this.focusable = false;  // Forms are containers, not focusable
+    }
+    
+    string get_name() { return name; }
+    void set_name(const string& in n) { name = n; }
+    
+    string get_accessible_name() override { return name; }
+    string get_accessible_role() override { return "form"; }
+    
+    bool handle_event(Event@ event) override {
+        return BaseControl::handle_event(event);
+    }
+    
+    bool focus_next_child() override {
+        int focused_index = -1;
+        for (uint i = 0; i < children.length(); i++) {
+            if (children[i].has_focus() || contains_focused_descendant(children[i])) {
+                focused_index = i;
+                break;
+            }
+        }
+        
+        // Try to move focus within the current child first
+        if (focused_index >= 0 && children[focused_index].focus_next_child()) {
+            return true;
+        }
+        
+        // Otherwise, find the next focusable control
+        for (uint i = focused_index + 1; i < children.length(); i++) {
+            if (set_focus_to_first_in(children[i])) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    bool focus_previous_child() override {
+        int focused_index = -1;
+        for (uint i = 0; i < children.length(); i++) {
+            if (children[i].has_focus() || contains_focused_descendant(children[i])) {
+                focused_index = i;
+                break;
+            }
+        }
+        
+        // Try to move focus within the current child first
+        if (focused_index >= 0 && children[focused_index].focus_previous_child()) {
+            return true;
+        }
+        
+        // Otherwise, find the previous focusable control
+        for (int i = focused_index - 1; i >= 0; i--) {
+            if (set_focus_to_last_in(children[i])) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+}

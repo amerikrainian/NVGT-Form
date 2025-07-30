@@ -1,0 +1,41 @@
+#include "form/core/control.nvgt"
+
+enum EventType {
+    KeyPressed,
+    KeyReleased,
+    FocusGained,
+    FocusLost,
+    Activated,
+}
+
+class Event
+{
+    IControl@ source;
+    EventType type;
+    bool is_handled = false;
+
+    Event(IControl@ source, EventType type)
+    {
+        @this.source = source;
+        this.type = type;
+    }
+
+    void stop_propagation() { is_handled = true; }
+}
+
+class KeyEvent : Event
+{
+    int keycode;
+    bool shift;
+    bool control;
+    bool alt;
+
+    KeyEvent(IControl@ source, EventType type, int keycode, bool shift = false, bool control = false, bool alt = false)
+    {
+        super(source, type);
+        this.keycode = keycode;
+        this.shift = shift;
+        this.control = control;
+        this.alt = alt;
+    }
+}

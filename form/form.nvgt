@@ -1,0 +1,8 @@
+#include "form/core/control.nvgt"
+#include "form/core/base_control.nvgt"
+#include "form/core/form.nvgt"
+#include "form/core/window_interface.nvgt"
+#include "form/core/window.nvgt"
+#include "form/core/accessibility_manager.nvgt"
+#include "form/widgets/button.nvgt"
+#include "form/containers/panel.nvgt"

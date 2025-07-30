@@ -1,0 +1,67 @@
+#include "form/core/base_control.nvgt"
+
+class Panel : BaseControl
+{
+    private string label;
+
+    Panel(const string& in label = "")
+    {
+        // Containers are not focusable by default.
+        this.focusable = false;
+        this.label = label;
+    }
+    
+    string get_label() { return label; }
+    void set_label(const string& in l) { label = l; }
+    
+    string get_accessible_name() override { return label; }
+    string get_accessible_role() override { return "panel"; }
+
+    bool focus_next_child() override {
+        int focused_index = -1;
+        for (uint i = 0; i < children.length(); i++) {
+            if (children[i].has_focus() || contains_focused_descendant(children[i])) {
+                focused_index = i;
+                break;
+            }
+        }
+        
+        // Try to move focus within the current child first
+        if (focused_index >= 0 && children[focused_index].focus_next_child()) {
+            return true;
+        }
+        
+        // Otherwise, find the next focusable control
+        for (uint i = focused_index + 1; i < children.length(); i++) {
+            if (set_focus_to_first_in(children[i])) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    bool focus_previous_child() override {
+        int focused_index = -1;
+        for (uint i = 0; i < children.length(); i++) {
+            if (children[i].has_focus() || contains_focused_descendant(children[i])) {
+                focused_index = i;
+                break;
+            }
+        }
+        
+        // Try to move focus within the current child first
+        if (focused_index >= 0 && children[focused_index].focus_previous_child()) {
+            return true;
+        }
+        
+        // Otherwise, find the previous focusable control
+        for (int i = focused_index - 1; i >= 0; i--) {
+            if (set_focus_to_last_in(children[i])) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+}

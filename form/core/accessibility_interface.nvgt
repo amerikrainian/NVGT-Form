@@ -1,0 +1,4 @@
+interface IAccessible {
+    string get_accessible_name();
+    string get_accessible_role();
+}

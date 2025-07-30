@@ -1,0 +1,72 @@
+#include "form/core/accessibility_interface.nvgt"
+#include "form/core/control.nvgt"
+#include "form/events/event.nvgt"
+#include "speech.nvgt"
+
+class AccessibilityManager {
+    private bool interrupt_on_focus = true;
+    
+    void announce_control(IControl@ control, bool interrupt = true) {
+        if (@control is null) return;
+        
+        string announcement = build_announcement(control);
+        if (announcement.length() > 0) {
+            speak(announcement, interrupt);
+        }
+    }
+    
+    string build_announcement(IControl@ control) {
+        if (@control is null) return "";
+        
+        string name = control.get_accessible_name();
+        string role = control.get_accessible_role();
+        string state = "";
+        
+        if (!control.is_enabled()) {
+            state = "unavailable";
+        } else if (control.has_focus()) {
+            state = "";
+        }
+        
+        string announcement = name;
+        if (role.length() > 0) {
+            if (announcement.length() > 0) announcement += " ";
+            announcement += role;
+        }
+        if (state.length() > 0) {
+            if (announcement.length() > 0) announcement += " ";
+            announcement += state;
+        }
+        
+        return announcement;
+    }
+    
+    void handle_focus_changed(IControl@ control) {
+        announce_control(control, interrupt_on_focus);
+    }
+    
+    void handle_event(Event@ event) {
+        if (event.type == EventType::FocusGained) {
+            handle_focus_changed(event.source);
+        } else if (event.type == EventType::Activated) {
+            IControl@ control = event.source;
+            if (@control !is null) {
+                string name = control.get_accessible_name();
+                speak(name + " activated", true);
+            }
+        }
+    }
+    
+    void announce_help(IControl@ control) {
+        if (@control is null) return;
+        
+        string help = "Press Tab to move to the next control, Shift Tab to move to the previous control";
+        string role = control.get_accessible_role();
+        
+        if (role == "button") {
+            help += ", Enter or Space to activate";
+        }
+        
+        speak(help, true);
+    }
+}

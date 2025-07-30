@@ -1,0 +1,31 @@
+#include "form/events/event.nvgt"
+
+funcdef void EventHandler(Event@);
+
+class EventDispatcher
+{
+    private array<EventHandler@> listeners;
+
+    void add(EventHandler@ callback)
+    {
+        if (@callback !is null && listeners.find_by_ref(callback) == -1)
+        {
+            listeners.insert_last(callback);
+        }
+    }
+
+    void remove(EventHandler@ callback)
+    {
+        int index = listeners.find_by_ref(callback);
+        if (index != -1) { listeners.remove_at(index); }
+    }
+
+    void fire(Event@ event)
+    {
+        array<EventHandler@> callbacks = listeners;
+        for (uint i = 0; i < callbacks.length(); i++)
+        {
+            callbacks[i](event);
+        }
+    }
+}

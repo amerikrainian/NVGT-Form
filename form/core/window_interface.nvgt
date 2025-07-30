@@ -1,0 +1,8 @@
+interface IWindow {
+    void show();
+    void close();
+    void run();
+    bool is_running();
+    string get_title();
+    void set_title(const string& in title);
+}

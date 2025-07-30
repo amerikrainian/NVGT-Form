@@ -1,0 +1,23 @@
+#include "form/events/event.nvgt"
+#include "form/core/accessibility_interface.nvgt"
+
+interface IControl : IAccessible
+{
+    IControl@ get_parent();
+    void set_parent(IControl@ parent);
+    bool is_focusable();
+    bool has_focus();
+    void set_focus(bool focused);
+    bool is_enabled();
+    void set_enabled(bool enabled);
+
+    bool handle_event(Event@ event);
+
+    void add_child(IControl@ child);
+    void remove_child(IControl@ child);
+    IControl@ get_child_at(uint index);
+    uint get_child_count();
+    
+    bool focus_next_child();
+    bool focus_previous_child();
+}
