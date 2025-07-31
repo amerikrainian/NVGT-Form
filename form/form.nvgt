@@ -7,4 +7,5 @@
 #include "form/core/accessibility_manager.nvgt"
 #include "form/widgets/button.nvgt"
 #include "form/widgets/checkbox.nvgt"
+#include "form/widgets/list.nvgt"
 #include "form/containers/panel.nvgt"

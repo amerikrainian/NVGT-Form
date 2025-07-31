@@ -1,0 +1,15 @@
+class ListItem
+{
+    string text;
+    bool selected = false;
+    
+    ListItem(const string& in t) {
+        this.text = t;
+    }
+    
+    string get_text() { return text; }
+    void set_text(const string& in t) { text = t; }
+    
+    bool is_selected() { return selected; }
+    void set_selected(bool s) { selected = s; }
+}

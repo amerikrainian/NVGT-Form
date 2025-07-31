@@ -28,7 +28,19 @@ class AccessibilityManager {
             state += "unavailable";
         }
         
-        // Build announcement: name, state, role
+        // Special handling for lists: name + role + state
+        if (role == "list") {
+            string announcement = name;
+            if (announcement.length() > 0) announcement += " ";
+            announcement += role;
+            if (state.length() > 0) {
+                announcement += " ";
+                announcement += state;
+            }
+            return announcement;
+        }
+        
+        // Default order: name + state + role
         string announcement = name;
         if (state.length() > 0) {
             if (announcement.length() > 0) announcement += " ";
@@ -67,6 +79,8 @@ class AccessibilityManager {
             help += ", Enter or Space to activate";
         } else if (role == "checkbox") {
             help += ", Space to toggle";
+        } else if (role == "list") {
+            help += ", Arrow keys to navigate items, Enter or Space to select";
         }
         
         speak(help, true);

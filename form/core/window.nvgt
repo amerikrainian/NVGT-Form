@@ -89,11 +89,9 @@ class Window : IWindow
     }
     
     private void setup_default_keys() {
-        // Tab navigation
         input_manager.register_key(KEY_TAB, KeyHandler(this.handle_tab));
         input_manager.register_modifier_combo(KEY_TAB, true, false, false, KeyHandler(this.handle_shift_tab));
         
-        // Window control
         input_manager.register_key(KEY_ESCAPE, KeyHandler(this.handle_escape));
         
         input_manager.register_key(KEY_F1, KeyHandler(this.handle_help));
@@ -166,7 +164,6 @@ class Window : IWindow
     
     void handle_window_event(Event@ event) {
         if (event.type == EventType::FocusGained) {
-            // Clear previous focus if different control
             if (@last_focused !is null && @last_focused !is @event.source) {
                 last_focused.set_focus(false);
             }

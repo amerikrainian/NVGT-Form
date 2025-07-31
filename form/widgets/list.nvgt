@@ -1,0 +1,144 @@
+#include "form/core/base_control.nvgt"
+#include "form/core/event_dispatcher.nvgt"
+#include "form/widgets/list_item.nvgt"
+
+class ListEvent : Event
+{
+    ListItem@ item;
+    int index;
+
+    ListEvent(IControl@ source, ListItem@ selected_item, int item_index)
+    {
+        super(source, EventType::Activated);
+        @this.item = selected_item;
+        this.index = item_index;
+    }
+}
+
+class List : BaseControl
+{
+    private string name;
+    private array<ListItem@> items;
+    private int selected_index = -1;
+    private bool announce_position = true;
+    EventDispatcher on_item_selected;
+
+    List(const string& in n, bool announce_pos = true, EventHandler@ on_selected = null) {
+        this.name = n;
+        this.announce_position = announce_pos;
+        this.focusable = true;
+
+        if (@on_selected !is null) {
+            this.on_item_selected.add(on_selected);
+        }
+    }
+
+    string get_name() { return name; }
+    void set_name(const string& in n) { name = n; }
+    
+    bool get_announce_position() { return announce_position; }
+    void set_announce_position(bool a) { announce_position = a; }
+    
+    string get_accessible_name() override { return name; }
+    string get_accessible_role() override { return "list"; }
+    string get_accessible_state() override {
+        if (selected_index >= 0 && selected_index < int(items.length())) {
+            string state = items[selected_index].get_text();
+            if (announce_position) {
+                state += " " + (selected_index + 1) + " of " + items.length();
+            }
+            return state;
+        }
+        return "";
+    }
+    
+    List@ add(const string& in text) {
+        ListItem@ item = ListItem(text);
+        items.insert_last(item);
+        
+        if (selected_index == -1 && items.length() > 0) {
+            selected_index = 0;
+            items[0].set_selected(true);
+        }
+        
+        return this; // For chaining
+    }
+    
+    int get_item_count() { return items.length(); }
+    
+    ListItem@ get_selected_item() {
+        if (selected_index >= 0 && selected_index < int(items.length())) {
+            return items[selected_index];
+        }
+        return null;
+    }
+    
+    int get_selected_index() { return selected_index; }
+    
+    void select_item(int index) {
+        if (index >= 0 && index < int(items.length())) {
+            if (selected_index >= 0 && selected_index < int(items.length())) {
+                items[selected_index].set_selected(false);
+            }
+            
+            selected_index = index;
+            items[index].set_selected(true);
+            
+            announce_current_item();
+        }
+    }
+    
+    private void announce_current_item() {
+        if (selected_index >= 0 && selected_index < int(items.length())) {
+            string announcement = items[selected_index].get_text();
+            if (announce_position) {
+                announcement += " " + (selected_index + 1) + " of " + items.length();
+            }
+            speak(announcement, true);
+        }
+    }
+    
+    bool handle_event(Event@ event) override {
+        if (event.type == EventType::KeyPressed) {
+            KeyEvent@ key_event = cast<KeyEvent@>(event);
+            if (key_event !is null) {
+                switch(key_event.keycode) {
+                    case KEY_DOWN:
+                        if (selected_index < int(items.length()) - 1) {
+                            select_item(selected_index + 1);
+                        }
+                        return true;
+                        
+                    case KEY_UP:
+                        if (selected_index > 0) {
+                            select_item(selected_index - 1);
+                        }
+                        return true;
+                        
+                    case KEY_HOME:
+                        if (items.length() > 0) {
+                            select_item(0);
+                        }
+                        return true;
+                        
+                    case KEY_END:
+                        if (items.length() > 0) {
+                            select_item(items.length() - 1);
+                        }
+                        return true;
+                        
+                    case KEY_RETURN:
+                    case KEY_SPACE:
+                        if (selected_index >= 0 && selected_index < int(items.length())) {
+                            ListEvent@ e = ListEvent(this, items[selected_index], selected_index);
+                            on_item_selected.fire(e);
+                            bubble_event(e);
+                        }
+                        return true;
+                }
+            }
+        }
+        
+        return BaseControl::handle_event(event);
+    }
+}
