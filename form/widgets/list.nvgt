@@ -1,18 +1,20 @@
 #include "form/core/base_control.nvgt"
 #include "form/core/event_dispatcher.nvgt"
-#include "form/widgets/list_item.nvgt"
 
-class ListEvent : Event
+class ListItem
 {
-    ListItem@ item;
-    int index;
-
-    ListEvent(IControl@ source, ListItem@ selected_item, int item_index)
-    {
-        super(source, EventType::Activated);
-        @this.item = selected_item;
-        this.index = item_index;
+    string text;
+    bool selected = false;
+    
+    ListItem(const string& in t) {
+        this.text = t;
     }
+    
+    string get_text() { return text; }
+    void set_text(const string& in t) { text = t; }
+    
+    bool is_selected() { return selected; }
+    void set_selected(bool s) { selected = s; }
 }
 
 class List : BaseControl

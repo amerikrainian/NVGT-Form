@@ -8,4 +8,6 @@
 #include "form/widgets/button.nvgt"
 #include "form/widgets/checkbox.nvgt"
 #include "form/widgets/list.nvgt"
+#include "form/widgets/radio_button_group.nvgt"
+#include "form/widgets/slider.nvgt"
 #include "form/containers/panel.nvgt"

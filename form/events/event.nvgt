@@ -50,3 +50,43 @@ class CheckboxEvent : Event
         this.checked = checked;
     }
 }
+
+class ListEvent : Event
+{
+    ListItem@ item;
+    int index;
+
+    ListEvent(IControl@ source, ListItem@ selected_item, int item_index)
+    {
+        super(source, EventType::Activated);
+        @this.item = selected_item;
+        this.index = item_index;
+    }
+}
+
+class RadioButtonEvent : Event
+{
+    RadioButton@ selected_item;
+    int selected_index;
+
+    RadioButtonEvent(IControl@ source, RadioButton@ item, int index)
+    {
+        super(source, EventType::Activated);
+        @this.selected_item = item;
+        this.selected_index = index;
+    }
+}
+
+class SliderEvent : Event
+{
+    double old_value;
+    double new_value;
+
+    SliderEvent(IControl@ source, double old_val, double new_val)
+    {
+        super(source, EventType::Activated);
+        this.old_value = old_val;
+        this.new_value = new_val;
+    }
+}
+

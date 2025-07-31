@@ -1,0 +1,174 @@
+#include "form/core/base_control.nvgt"
+#include "form/core/event_dispatcher.nvgt"
+
+class RadioButton : BaseControl
+{
+    private string text;
+    private bool checked = false;
+
+    RadioButton(const string& in t) {
+        this.text = t;
+        this.focusable = false; // Individual radio buttons are not focusable
+    }
+
+    string get_text() { return text; }
+    void set_text(const string& in t) { text = t; }
+    
+    bool is_checked() { return checked; }
+    void set_checked(bool c) { checked = c; }
+    
+    string get_accessible_name() override { return text; }
+    string get_accessible_role() override { return "radio"; }
+    string get_accessible_state() override { return checked ? "checked" : "not checked"; }
+}
+
+enum RadioNavigationMode {
+    AUTO_SELECT,    // Arrows immediately select
+    MANUAL_SELECT   // Arrows move focus, space/enter selects
+}
+
+class RadioButtonGroup : BaseControl
+{
+    private string group_name;
+    private array<RadioButton@> items;
+    private int selected_index = -1;
+    private int focused_index = -1;  // For MANUAL_SELECT mode
+    private RadioNavigationMode nav_mode;
+    EventDispatcher on_selection_changed;
+
+    RadioButtonGroup(const string& in name, RadioNavigationMode mode = AUTO_SELECT, EventHandler@ on_change = null) {
+        this.group_name = name;
+        this.focusable = true;
+        this.nav_mode = mode;
+        
+        if (@on_change !is null) {
+            this.on_selection_changed.add(on_change);
+        }
+    }
+
+    string get_group_name() { return group_name; }
+    void set_group_name(const string& in name) { group_name = name; }
+    
+    string get_accessible_name() override { return group_name; }
+    string get_accessible_role() override { return "radio group"; }
+    string get_accessible_state() override {
+        if (nav_mode == MANUAL_SELECT && focused_index >= 0 && focused_index < int(items.length())) {
+            // In manual mode, announce focused item
+            if (selected_index == focused_index) {
+                return items[focused_index].get_text() + " selected";
+            } else {
+                return items[focused_index].get_text();
+            }
+        } else if (selected_index >= 0 && selected_index < int(items.length())) {
+            return items[selected_index].get_text() + " selected";
+        }
+        return "no selection";
+    }
+    
+    RadioButtonGroup@ add(const string& in text, bool select = false) {
+        RadioButton@ item = RadioButton(text);
+        items.insert_last(item);
+        
+        if (select) {
+            select_item(items.length() - 1, false);  // Don't fire event on initial selection
+        }
+        
+        return this; // For chaining
+    }
+    
+    int get_item_count() { return items.length(); }
+    
+    RadioButton@ get_selected_item() {
+        if (selected_index >= 0 && selected_index < int(items.length())) {
+            return items[selected_index];
+        }
+        return null;
+    }
+    
+    int get_selected_index() { return selected_index; }
+    
+    void select_item(int index, bool fire_event = true) {
+        if (index >= 0 && index < int(items.length())) {
+            // Don't fire event if already selected
+            if (index == selected_index) return;
+            
+            if (selected_index >= 0 && selected_index < int(items.length())) {
+                items[selected_index].set_checked(false);
+            }
+            
+            selected_index = index;
+            items[index].set_checked(true);
+            
+            if (fire_event) {
+                RadioButtonEvent@ e = RadioButtonEvent(this, items[index], index);
+                bubble_event(e);
+                on_selection_changed.fire(e);
+            }
+        }
+    }
+    
+    private void focus_item(int index) {
+        if (nav_mode == MANUAL_SELECT && index >= 0 && index < int(items.length())) {
+            focused_index = index;
+            Event@ e = Event(this, EventType::Activated);
+            bubble_event(e);
+        }
+    }
+    
+    bool handle_event(Event@ event) override {
+        if (event.type == EventType::KeyPressed) {
+            KeyEvent@ key_event = cast<KeyEvent@>(event);
+            if (key_event !is null) {
+                int current_index;
+                
+                if (nav_mode == AUTO_SELECT) {
+                    current_index = selected_index >= 0 ? selected_index : 0;
+                } else {
+                    current_index = focused_index >= 0 ? focused_index : (selected_index >= 0 ? selected_index : 0);
+                }
+                
+                switch(key_event.keycode) {
+                    case KEY_DOWN:
+                    case KEY_RIGHT:
+                        if (items.length() > 0) {
+                            int next_index = (current_index + 1) % items.length();
+                            if (nav_mode == AUTO_SELECT) {
+                                select_item(next_index);
+                            } else {
+                                focus_item(next_index);
+                            }
+                        }
+                        return true;
+                        
+                    case KEY_UP:
+                    case KEY_LEFT:
+                        if (items.length() > 0) {
+                            int prev_index = current_index - 1;
+                            if (prev_index < 0) prev_index = items.length() - 1;
+                            if (nav_mode == AUTO_SELECT) {
+                                select_item(prev_index);
+                            } else {
+                                focus_item(prev_index);
+                            }
+                        }
+                        return true;
+                        
+                    case KEY_SPACE:
+                    case KEY_RETURN:
+                        if (nav_mode == MANUAL_SELECT && focused_index >= 0) {
+                            select_item(focused_index);
+                        } else if (selected_index == -1 && items.length() > 0) {
+                            select_item(0);
+                        }
+                        return true;
+                }
+            }
+        }
+        
+        return BaseControl::handle_event(event);
+    }
+    
+    void set_focus(bool f) override {
+        BaseControl::set_focus(f);
+    }
+}

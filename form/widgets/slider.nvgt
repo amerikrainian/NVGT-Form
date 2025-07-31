@@ -1,0 +1,153 @@
+#include "form/core/base_control.nvgt"
+#include "form/core/event_dispatcher.nvgt"
+
+funcdef string SliderFormatter(double value);
+
+class Slider : BaseControl
+{
+    private string name;
+    private double min_value;
+    private double max_value;
+    private double current_value;
+    private double step_size;
+    private double page_size;
+    private int decimal_places;
+    private SliderFormatter@ formatter;
+    EventDispatcher on_value_changed;
+
+    Slider(const string& in n, double min, double max, double initial, 
+           double step, double page, int decimals = 2,
+           SliderFormatter@ fmt = null, EventHandler@ on_change = null) {
+        // Validate parameters
+        if (min > max) {
+            // Swap if reversed
+            // Should this error?
+            double temp = min;
+            min = max;
+            max = temp;
+        }
+        if (step <= 0) step = 1;
+        if (page <= 0) page = step * 10;
+        if (decimals < 0) decimals = 0;
+        
+        this.name = n;
+        this.min_value = min;
+        this.max_value = max;
+        this.step_size = step;
+        this.page_size = page;
+        this.decimal_places = decimals;
+        this.focusable = true;
+        @this.formatter = fmt;
+        
+        this.current_value = round_value(clamp_value(initial));
+        
+        if (@on_change !is null) {
+            this.on_value_changed.add(on_change);
+        }
+    }
+
+    string get_name() { return name; }
+    void set_name(const string& in n) { name = n; }
+    
+    double get_value() { return current_value; }
+    void set_value(double val) {
+        double old_value = current_value;
+        current_value = round_value(clamp_value(val));
+        
+        if (current_value != old_value) {
+            fire_change_event(old_value, current_value);
+        }
+    }
+    
+    double get_min() { return min_value; }
+    double get_max() { return max_value; }
+    double get_step() { return step_size; }
+    double get_page() { return page_size; }
+    
+    void set_formatter(SliderFormatter@ fmt) { @formatter = fmt; }
+    
+    string get_accessible_name() override { return name; }
+    string get_accessible_role() override { return "slider"; }
+    string get_accessible_state() override { 
+        if (@formatter !is null) {
+            return formatter(current_value);
+        }
+        return format_value(current_value);
+    }
+    
+    private double clamp_value(double val) {
+        if (val < min_value) return min_value;
+        if (val > max_value) return max_value;
+        return val;
+    }
+    
+    private double round_value(double val) {
+        if (decimal_places == 0) {
+            return floor(val + 0.5);
+        }
+        double multiplier = pow(10, decimal_places);
+        return floor(val * multiplier + 0.5) / multiplier;
+    }
+    
+    private string format_value(double val) {
+        if (decimal_places == 0) {
+            return "" + int(val);
+        }
+        double multiplier = pow(10, decimal_places);
+        return string(round(floor(val * multiplier + 0.5) / multiplier, decimal_places));
+    }
+    
+    private void fire_change_event(double old_val, double new_val) {
+        SliderEvent@ e = SliderEvent(this, old_val, new_val);
+        bubble_event(e);
+        on_value_changed.fire(e);
+    }
+    
+    private void adjust_value(double delta) {
+        double old_value = current_value;
+        current_value = round_value(clamp_value(current_value + delta));
+        
+        if (current_value != old_value) {
+            fire_change_event(old_value, current_value);
+        }
+    }
+    
+    bool handle_event(Event@ event) override {
+        if (event.type == EventType::KeyPressed) {
+            KeyEvent@ key_event = cast<KeyEvent@>(event);
+            if (key_event !is null) {
+                switch(key_event.keycode) {
+                    case KEY_LEFT:
+                        adjust_value(-step_size);
+                        return true;
+                        
+                    case KEY_RIGHT:
+                        adjust_value(step_size);
+                        return true;
+                        
+                    case KEY_PAGEUP:
+                        adjust_value(-page_size);
+                        return true;
+                        
+                    case KEY_PAGEDOWN:
+                        adjust_value(page_size);
+                        return true;
+                        
+                    case KEY_HOME:
+                        set_value(min_value);
+                        return true;
+                        
+                    case KEY_END:
+                        set_value(max_value);
+                        return true;
+                }
+            }
+        }
+        
+        return BaseControl::handle_event(event);
+    }
+    
+    void set_focus(bool f) override {
+        BaseControl::set_focus(f);
+    }
+}

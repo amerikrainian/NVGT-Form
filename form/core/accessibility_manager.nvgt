@@ -28,8 +28,7 @@ class AccessibilityManager {
             state += "unavailable";
         }
         
-        // Special handling for lists: name + role + state
-        if (role == "list") {
+        if (role == "list" || role == "slider" || role == "radio group") {
             string announcement = name;
             if (announcement.length() > 0) announcement += " ";
             announcement += role;
@@ -58,14 +57,33 @@ class AccessibilityManager {
         announce_control(control, interrupt_on_focus);
     }
     
+    void handle_activated_event(Event@ event) {
+        IControl@ control = event.source;
+        if (@control is null) return;
+        
+        string role = control.get_accessible_role();
+        
+        if (role == "checkbox") {
+            string state = control.get_accessible_state();
+            speak(state, true);
+        }
+        else if (role == "radio group") {
+            string state = control.get_accessible_state();
+            if (state != "no selection") {
+                speak(state, true);
+            }
+        }
+        else if (role == "slider") {
+            string state = control.get_accessible_state();
+            speak(state, true);
+        }
+    }
+    
     void handle_event(Event@ event) {
         if (event.type == EventType::FocusGained) {
             handle_focus_changed(event.source);
         } else if (event.type == EventType::Activated) {
-            CheckboxEvent@ cb_event = cast<CheckboxEvent@>(event);
-            if (@cb_event !is null) {
-                speak(cb_event.checked ? "checked" : "unchecked", true);
-            }
+            handle_activated_event(event);
         }
     }
     
@@ -81,6 +99,10 @@ class AccessibilityManager {
             help += ", Space to toggle";
         } else if (role == "list") {
             help += ", Arrow keys to navigate items, Enter or Space to select";
+        } else if (role == "radio group") {
+            help += ", Arrow keys to select options";
+        } else if (role == "slider") {
+            help += ", Left and Right arrows to adjust value, Home and End for minimum and maximum, Page Up and Page Down to adjust by larger increments";
         }
         
         speak(help, true);
