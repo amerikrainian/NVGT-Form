@@ -22,10 +22,9 @@ class EventDispatcher
 
     void fire(Event@ event)
     {
-        array<EventHandler@> callbacks = listeners;
-        for (uint i = 0; i < callbacks.length(); i++)
+        for (uint i = 0; i < listeners.length(); i++)
         {
-            callbacks[i](event);
+            listeners[i](event);
         }
     }
 }
