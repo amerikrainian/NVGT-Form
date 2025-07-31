@@ -6,12 +6,23 @@ class Button : BaseControl
     private string text;
     EventDispatcher on_click;
 
-    Button(const string& in text)
-    {
-        this.text = text;
-        this.focusable = true;
+    Button(const string& in t) {
+        init(t, null);
     }
-    
+
+    Button(const string& in t, EventHandler@ callback) {
+        init(t, callback);
+    }
+
+    void init(const string& in t, EventHandler@ callback) {
+        this.text = t;
+        this.focusable = true;
+
+        if (callback !is null) {
+            this.on_click.add(callback);
+        }
+    }
+
     string get_text() { return text; }
     void set_text(const string& in t) { text = t; }
     
