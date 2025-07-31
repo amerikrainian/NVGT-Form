@@ -1,0 +1,75 @@
+#include "form/events/event.nvgt"
+
+funcdef bool KeyHandler(KeyEvent@);
+
+class InputManager {
+    private dictionary key_handlers;
+    private dictionary modifier_handlers;
+    
+    void register_key(int key, KeyHandler@ handler) {
+        if (@handler !is null) {
+            key_handlers[key] = @handler;
+        }
+    }
+    
+    void unregister_key(int key) {
+        key_handlers.delete(key);
+    }
+    
+    void register_modifier_combo(int key, bool shift, bool ctrl, bool alt, KeyHandler@ handler) {
+        if (@handler !is null) {
+            string combo_key = format_combo_key(key, shift, ctrl, alt);
+            modifier_handlers[combo_key] = @handler;
+        }
+    }
+    
+    private string format_combo_key(int key, bool shift, bool ctrl, bool alt) {
+        return key + "_" + (shift ? "1" : "0") + (ctrl ? "1" : "0") + (alt ? "1" : "0");
+    }
+    
+    bool process_input(IControl@ focused_control) {
+        if (@focused_control is null) return false;
+        
+        bool handled = false;
+        bool shift = key_down(KEY_LSHIFT) || key_down(KEY_RSHIFT);
+        bool ctrl = key_down(KEY_LCTRL) || key_down(KEY_RCTRL);
+        bool alt = key_down(KEY_LALT) || key_down(KEY_RALT);
+        
+        int[] pressed_keys = keys_pressed();
+        
+        for (uint i = 0; i < pressed_keys.length(); i++) {
+            int key = pressed_keys[i];
+            
+            string combo_key = format_combo_key(key, shift, ctrl, alt);
+            if (modifier_handlers.exists(combo_key)) {
+                KeyHandler@ handler = cast<KeyHandler@>(modifier_handlers[combo_key]);
+                if (@handler !is null) {
+                    KeyEvent@ e = KeyEvent(focused_control, EventType::KeyPressed, key, shift, ctrl, alt);
+                    if (handler(e)) {
+                        handled = true;
+                        continue;
+                    }
+                }
+            }
+            
+            if (key_handlers.exists(key)) {
+                KeyHandler@ handler = cast<KeyHandler@>(key_handlers[key]);
+                if (@handler !is null) {
+                    KeyEvent@ e = KeyEvent(focused_control, EventType::KeyPressed, key, shift, ctrl, alt);
+                    if (handler(e)) {
+                        handled = true;
+                        continue;
+                    }
+                }
+            }
+            
+            // If not handled by registered handlers, send to control
+            KeyEvent@ e = KeyEvent(focused_control, EventType::KeyPressed, key, shift, ctrl, alt);
+            if (focused_control.handle_event(e)) {
+                handled = true;
+            }
+        }
+        
+        return handled;
+    }
+}

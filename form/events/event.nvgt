@@ -39,3 +39,14 @@ class KeyEvent : Event
         this.alt = alt;
     }
 }
+
+class CheckboxEvent : Event
+{
+    bool checked;
+
+    CheckboxEvent(IControl@ source, bool checked)
+    {
+        super(source, EventType::Activated);
+        this.checked = checked;
+    }
+}

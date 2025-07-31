@@ -15,36 +15,9 @@ class BaseControl : IControl
     bool has_focus() { return focused; }
     void set_focus(bool f) { 
         if (f != focused) {
-            if (f) {
-                ensure_single_focus();
-            }
-            
             focused = f;
             Event@ e = Event(this, f ? EventType::FocusGained : EventType::FocusLost);
             bubble_event(e);
-        }
-    }
-    
-    private void ensure_single_focus() {
-        // Are we overcomplicating this?
-        IControl@ root = this;
-        while (root.get_parent() !is null) {
-            @root = root.get_parent();
-        }
-        
-        // Clear focus from all other controls
-        clear_focus_except(root, this);
-    }
-    
-    private void clear_focus_except(IControl@ control, IControl@ except) {
-        if (@control is null || @control is @except) return;
-        
-        if (control.has_focus()) {
-            control.set_focus(false);
-        }
-        
-        for (uint i = 0; i < control.get_child_count(); i++) {
-            clear_focus_except(control.get_child_at(i), except);
         }
     }
     
@@ -106,6 +79,7 @@ class BaseControl : IControl
     
     string get_accessible_name() { return ""; }
     string get_accessible_role() { return "control"; }
+    string get_accessible_state() { return ""; }
     
     bool contains_focused_descendant(IControl@ control) {
         if (@control is null) return false;

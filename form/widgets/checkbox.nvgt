@@ -1,0 +1,67 @@
+#include "form/core/base_control.nvgt"
+#include "form/core/event_dispatcher.nvgt"
+
+class Checkbox : BaseControl
+{
+    private string text;
+    private bool checked = false;
+    EventDispatcher on_change;
+    EventDispatcher on_checked;
+    EventDispatcher on_unchecked;
+
+    Checkbox(const string& in t, bool initial_checked = false, 
+             EventHandler@ on_change_callback = null,
+             EventHandler@ on_checked_callback = null,
+             EventHandler@ on_unchecked_callback = null) {
+        this.text = t;
+        this.checked = initial_checked;
+        this.focusable = true;
+
+        if (@on_change_callback !is null) {
+            this.on_change.add(on_change_callback);
+        }
+        if (@on_checked_callback !is null) {
+            this.on_checked.add(on_checked_callback);
+        }
+        if (@on_unchecked_callback !is null) {
+            this.on_unchecked.add(on_unchecked_callback);
+        }
+    }
+
+    string get_text() { return text; }
+    void set_text(const string& in t) { text = t; }
+    
+    bool is_checked() { return checked; }
+    void set_checked(bool c) { 
+        if (c != checked) {
+            checked = c;
+            CheckboxEvent@ e = CheckboxEvent(this, checked);
+            on_change.fire(e);
+            if (checked) {
+                on_checked.fire(e);
+            } else {
+                on_unchecked.fire(e);
+            }
+            bubble_event(e);
+        }
+    }
+    
+    void toggle() {
+        set_checked(!checked);
+    }
+    
+    string get_accessible_name() override { return text; }
+    string get_accessible_state() { return checked ? "checked" : "not checked"; }
+    string get_accessible_role() override { return "checkbox"; }
+
+    bool handle_event(Event@ event) override {
+        if (event.type == EventType::KeyPressed) {
+            KeyEvent@ key_event = cast<KeyEvent@>(event);
+            if (key_event !is null && key_event.keycode == KEY_SPACE) {
+                toggle();
+                return true;
+            }
+        }
+        return BaseControl::handle_event(event);
+    }
+}

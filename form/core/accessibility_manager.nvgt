@@ -19,23 +19,24 @@ class AccessibilityManager {
         if (@control is null) return "";
         
         string name = control.get_accessible_name();
+        string state = control.get_accessible_state();
         string role = control.get_accessible_role();
-        string state = "";
         
+        // Add unavailable state if disabled
         if (!control.is_enabled()) {
-            state = "unavailable";
-        } else if (control.has_focus()) {
-            state = "";
+            if (state.length() > 0) state += " ";
+            state += "unavailable";
         }
         
+        // Build announcement: name, state, role
         string announcement = name;
-        if (role.length() > 0) {
-            if (announcement.length() > 0) announcement += " ";
-            announcement += role;
-        }
         if (state.length() > 0) {
             if (announcement.length() > 0) announcement += " ";
             announcement += state;
+        }
+        if (role.length() > 0) {
+            if (announcement.length() > 0) announcement += " ";
+            announcement += role;
         }
         
         return announcement;
@@ -49,10 +50,9 @@ class AccessibilityManager {
         if (event.type == EventType::FocusGained) {
             handle_focus_changed(event.source);
         } else if (event.type == EventType::Activated) {
-            IControl@ control = event.source;
-            if (@control !is null) {
-                string name = control.get_accessible_name();
-                speak(name + " activated", true);
+            CheckboxEvent@ cb_event = cast<CheckboxEvent@>(event);
+            if (@cb_event !is null) {
+                speak(cb_event.checked ? "checked" : "unchecked", true);
             }
         }
     }
@@ -65,6 +65,8 @@ class AccessibilityManager {
         
         if (role == "button") {
             help += ", Enter or Space to activate";
+        } else if (role == "checkbox") {
+            help += ", Space to toggle";
         }
         
         speak(help, true);
