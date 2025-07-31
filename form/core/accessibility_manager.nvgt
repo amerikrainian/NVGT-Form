@@ -20,7 +20,8 @@ class AccessibilityManager {
         
         string name = control.get_accessible_name();
         string state = control.get_accessible_state();
-        string role = control.get_accessible_role();
+        AccessKitRole role = control.get_accessible_role();
+        string role_name = get_role_name(role);
         
         // Add unavailable state if disabled
         if (!control.is_enabled()) {
@@ -28,10 +29,10 @@ class AccessibilityManager {
             state += "unavailable";
         }
         
-        if (role == "list" || role == "slider" || role == "radio group") {
+        if (role == ACCESS_KIT_LIST || role == ACCESS_KIT_SLIDER || role == ACCESS_KIT_RADIO_GROUP) {
             string announcement = name;
             if (announcement.length() > 0) announcement += " ";
-            announcement += role;
+            announcement += role_name;
             if (state.length() > 0) {
                 announcement += " ";
                 announcement += state;
@@ -45,9 +46,9 @@ class AccessibilityManager {
             if (announcement.length() > 0) announcement += " ";
             announcement += state;
         }
-        if (role.length() > 0) {
+        if (role_name.length() > 0) {
             if (announcement.length() > 0) announcement += " ";
-            announcement += role;
+            announcement += role_name;
         }
         
         return announcement;
@@ -61,19 +62,20 @@ class AccessibilityManager {
         IControl@ control = event.source;
         if (@control is null) return;
         
-        string role = control.get_accessible_role();
+        AccessKitRole role = control.get_accessible_role();
+        string role_name = get_role_name(role);
         
-        if (role == "checkbox") {
+        if (role == ACCESS_KIT_CHECK_BOX) {
             string state = control.get_accessible_state();
             speak(state, true);
         }
-        else if (role == "radio group") {
+        else if (role == ACCESS_KIT_RADIO_GROUP) {
             string state = control.get_accessible_state();
             if (state != "no selection") {
                 speak(state, true);
             }
         }
-        else if (role == "slider") {
+        else if (role == ACCESS_KIT_SLIDER) {
             string state = control.get_accessible_state();
             speak(state, true);
         }
@@ -85,26 +87,5 @@ class AccessibilityManager {
         } else if (event.type == EventType::Activated) {
             handle_activated_event(event);
         }
-    }
-    
-    void announce_help(IControl@ control) {
-        if (@control is null) return;
-        
-        string help = "Press Tab to move to the next control, Shift Tab to move to the previous control";
-        string role = control.get_accessible_role();
-        
-        if (role == "button") {
-            help += ", Enter or Space to activate";
-        } else if (role == "checkbox") {
-            help += ", Space to toggle";
-        } else if (role == "list") {
-            help += ", Arrow keys to navigate items, Enter or Space to select";
-        } else if (role == "radio group") {
-            help += ", Arrow keys to select options";
-        } else if (role == "slider") {
-            help += ", Left and Right arrows to adjust value, Home and End for minimum and maximum, Page Up and Page Down to adjust by larger increments";
-        }
-        
-        speak(help, true);
     }
 }

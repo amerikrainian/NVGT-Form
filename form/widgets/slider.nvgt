@@ -67,7 +67,7 @@ class Slider : BaseControl
     void set_formatter(SliderFormatter@ fmt) { @formatter = fmt; }
     
     string get_accessible_name() override { return name; }
-    string get_accessible_role() override { return "slider"; }
+    AccessKitRole get_accessible_role() override { return ACCESS_KIT_SLIDER; }
     string get_accessible_state() override { 
         if (@formatter !is null) {
             return formatter(current_value);

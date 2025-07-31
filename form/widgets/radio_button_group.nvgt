@@ -18,7 +18,7 @@ class RadioButton : BaseControl
     void set_checked(bool c) { checked = c; }
     
     string get_accessible_name() override { return text; }
-    string get_accessible_role() override { return "radio"; }
+    AccessKitRole get_accessible_role() override { return ACCESS_KIT_RADIO_BUTTON; }
     string get_accessible_state() override { return checked ? "checked" : "not checked"; }
 }
 
@@ -50,7 +50,7 @@ class RadioButtonGroup : BaseControl
     void set_group_name(const string& in name) { group_name = name; }
     
     string get_accessible_name() override { return group_name; }
-    string get_accessible_role() override { return "radio group"; }
+    AccessKitRole get_accessible_role() override { return ACCESS_KIT_RADIO_GROUP; }
     string get_accessible_state() override {
         if (nav_mode == MANUAL_SELECT && focused_index >= 0 && focused_index < int(items.length())) {
             // In manual mode, announce focused item

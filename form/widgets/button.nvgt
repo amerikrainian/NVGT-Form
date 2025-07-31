@@ -19,7 +19,7 @@ class Button : BaseControl
     void set_text(const string& in t) { text = t; }
     
     string get_accessible_name() override { return text; }
-    string get_accessible_role() override { return "button"; }
+    AccessKitRole get_accessible_role() override { return ACCESS_KIT_BUTTON; }
 
     bool handle_event(Event@ event) override {
         if (event.type == EventType::KeyPressed) {

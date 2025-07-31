@@ -42,7 +42,7 @@ class List : BaseControl
     void set_announce_position(bool a) { announce_position = a; }
     
     string get_accessible_name() override { return name; }
-    string get_accessible_role() override { return "list"; }
+    AccessKitRole get_accessible_role() override { return ACCESS_KIT_LIST; }
     string get_accessible_state() override {
         if (selected_index >= 0 && selected_index < int(items.length())) {
             string state = items[selected_index].get_text();

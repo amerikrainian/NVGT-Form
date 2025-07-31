@@ -52,7 +52,7 @@ class Checkbox : BaseControl
     
     string get_accessible_name() override { return text; }
     string get_accessible_state() { return checked ? "checked" : "not checked"; }
-    string get_accessible_role() override { return "checkbox"; }
+    AccessKitRole get_accessible_role() override { return ACCESS_KIT_CHECK_BOX; }
 
     bool handle_event(Event@ event) override {
         if (event.type == EventType::KeyPressed) {

@@ -15,7 +15,7 @@ class Panel : BaseControl
     void set_label(const string& in l) { label = l; }
     
     string get_accessible_name() override { return label; }
-    string get_accessible_role() override { return "panel"; }
+    AccessKitRole get_accessible_role() override { return ACCESS_KIT_PANE; }
 
     bool focus_next_child() override {
         int focused_index = -1;

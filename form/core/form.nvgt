@@ -13,7 +13,7 @@ class Form : BaseControl
     void set_name(const string& in n) { name = n; }
     
     string get_accessible_name() override { return name; }
-    string get_accessible_role() override { return "form"; }
+    AccessKitRole get_accessible_role() override { return ACCESS_KIT_FORM; }
     
     bool handle_event(Event@ event) override {
         return BaseControl::handle_event(event);

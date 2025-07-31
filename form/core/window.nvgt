@@ -93,8 +93,6 @@ class Window : IWindow
         input_manager.register_modifier_combo(KEY_TAB, true, false, false, KeyHandler(this.handle_shift_tab));
         
         input_manager.register_key(KEY_ESCAPE, KeyHandler(this.handle_escape));
-        
-        input_manager.register_key(KEY_F1, KeyHandler(this.handle_help));
     }
     
     private bool handle_tab(KeyEvent@ e) {
@@ -137,15 +135,7 @@ class Window : IWindow
         close();
         return true;
     }
-    
-    private bool handle_help(KeyEvent@ e) {
-        if (@focused_control !is null) {
-            accessibility_manager.announce_help(focused_control);
-        }
-        return true;
-    }
-    
-    
+
     private void set_focus_to_first() {
         for (uint i = 0; i < root_form.get_child_count(); i++) {
             if (root_form.set_focus_to_first_in(root_form.get_child_at(i))) {

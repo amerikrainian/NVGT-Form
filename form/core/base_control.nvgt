@@ -78,7 +78,7 @@ class BaseControl : IControl
     }
     
     string get_accessible_name() { return ""; }
-    string get_accessible_role() { return "control"; }
+    AccessKitRole get_accessible_role() { return ACCESS_KIT_GENERIC_CONTAINER; }
     string get_accessible_state() { return ""; }
     
     bool contains_focused_descendant(IControl@ control) {

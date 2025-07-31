@@ -1,3 +1,4 @@
+#include "form/core/role.nvgt"
 #include "form/core/control.nvgt"
 #include "form/core/base_control.nvgt"
 #include "form/core/form.nvgt"
