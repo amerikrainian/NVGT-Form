@@ -1,0 +1,108 @@
+#include "form/form.nvgt"
+
+Window@ main_window;  // Global so exit button can access it
+
+void button_clicked(Event@ e) {
+    speak("Button was clicked!", true);
+}
+
+void checkbox_changed(Event@ e) {
+    speak("And the world was toggled...", false);
+}
+
+void list_item_selected(Event@ e) {
+    ListEvent@ list_event = cast<ListEvent@>(e);
+    if (@list_event !is null && @list_event.item !is null) {
+        speak("Selected: " + list_event.item.get_text(), true);
+    }
+}
+
+void radio_selection_changed(Event@ e) {
+    RadioButtonEvent@ radio_event = cast<RadioButtonEvent@>(e);
+    if (@radio_event !is null && @radio_event.selected_item !is null) {
+        speak("Radio selected: " + radio_event.selected_item.get_text(), false);
+    }
+}
+
+void slider_value_changed(Event@ e) {
+    SliderEvent@ slider_event = cast<SliderEvent@>(e);
+    if (@slider_event !is null) {
+        speak("Slider changed from " + slider_event.old_value + " to " + slider_event.new_value, false);
+    }
+}
+
+string format_volume(double value) {
+    return int(value) + "%";
+}
+
+string format_price(double value) {
+    // Format price with 2 decimal places
+    return string(round(floor(value * 100 + 0.5) / 100, 2));
+}
+
+
+
+void exit_button_clicked(Event@ e) {
+    main_window.close();
+}
+
+void main() {
+    @main_window = Window("Test Window");
+
+    main_window.add_control(Button("Click Me", button_clicked));
+    main_window.add_control(Checkbox("Enable notifications", false, checkbox_changed));
+    
+    // List with position announcements
+    main_window.add_control(
+        List("Favorite colors", true, list_item_selected)
+            .add("Red")
+            .add("Green") 
+            .add("Blue")
+            .add("Yellow")
+    );
+    
+    // List without position announcements
+    main_window.add_control(
+        List("Recent files", false)
+            .add("document.txt")
+            .add("image.png")
+            .add("data.csv")
+    );
+    
+    // Radio button group with AUTO_SELECT mode (arrows immediately select)
+    main_window.add_control(
+        RadioButtonGroup("Choose size (auto-select)", AUTO_SELECT, radio_selection_changed)
+            .add("Small")
+            .add("Medium")
+            .add("Large")
+            .add("Extra Large")
+    );
+    
+    // Radio button group with MANUAL_SELECT mode (arrows navigate, space/enter selects)
+    main_window.add_control(
+        RadioButtonGroup("Difficulty (manual select)", MANUAL_SELECT, radio_selection_changed)
+            .add("Easy", true)  // Selected by default
+            .add("Normal")
+            .add("Hard")
+            .add("Extreme")
+    );
+    
+    // Volume slider (0-100, step 5, page 10)
+    main_window.add_control(
+        Slider("Volume", 0, 100, 50, 5, 10, 0, format_volume, slider_value_changed)
+    );
+    
+    // Price slider with decimal values
+    main_window.add_control(
+        Slider("Price", 0.99, 99.99, 19.99, 0.50, 5.00, 2, format_price, slider_value_changed)
+    );
+    
+    // Simple slider without formatter
+    main_window.add_control(
+        Slider("Brightness", 0, 255, 128, 1, 16, 0, null, slider_value_changed)
+    );
+    
+    main_window.add_control(Button("Exit", exit_button_clicked));
+
+    main_window.run();
+}
